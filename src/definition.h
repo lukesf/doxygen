@@ -271,7 +271,7 @@ class Definition
     virtual const Definition *findInnerCompound(const QCString &name) const = 0;
     virtual Definition *getOuterScope() const = 0;
 
-    virtual const MemberVector &getReferencesMembers() const = 0;
+    virtual const MemberVector &getReferencesMembers(const bool sorted=true) const = 0;
     virtual const MemberVector &getReferencedByMembers() const = 0;
 
     virtual bool hasSections() const = 0;
