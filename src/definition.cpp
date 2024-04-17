@@ -135,6 +135,7 @@ class DefinitionImpl::IMPL
     int defColumn;
 
     MemberVector referencesMembers;    // cache for getReferencesMembers()
+    MemberVector referencesMembersUnsorted;    // cache for getReferencesMembersUnsorted()
     MemberVector referencedByMembers;  // cache for getReferencedByMembers()
 };
 
@@ -1114,7 +1115,7 @@ void DefinitionImpl::writeInlineCode(OutputList &ol,const QCString &scopeName) c
   }
 }
 
-static inline MemberVector refMapToVector(const std::unordered_map<std::string,MemberDef *> &map)
+static inline MemberVector refMapToVector(const std::unordered_map<std::string,MemberDef *> &map, const bool sorted=true)
 {
   // convert map to a vector of values
   MemberVector result;
@@ -1124,8 +1125,10 @@ static inline MemberVector refMapToVector(const std::unordered_map<std::string,M
                  { return item.second; }     // extract value to add from map Key,Value pair
                 );
   // and sort it
-  std::sort(result.begin(),result.end(),
-              [](const auto &m1,const auto &m2) { return genericCompareMembers(m1,m2)<0; });
+  if (sorted) {
+    std::sort(result.begin(),result.end(),
+                [](const auto &m1,const auto &m2) { return genericCompareMembers(m1,m2)<0; });
+  }
   return result;
 }
 
@@ -1753,14 +1756,18 @@ Definition *DefinitionImpl::getOuterScope() const
 
 static std::mutex g_memberReferenceMutex;
 
-const MemberVector &DefinitionImpl::getReferencesMembers() const
+const MemberVector &DefinitionImpl::getReferencesMembers(const bool sorted) const
 {
   std::lock_guard<std::mutex> lock(g_memberReferenceMutex);
-  if (m_impl->referencesMembers.empty() && !m_impl->sourceRefsDict.empty())
-  {
-    m_impl->referencesMembers = refMapToVector(m_impl->sourceRefsDict);
+  MemberVector *refs = &m_impl->referencesMembers;
+  if (!sorted) {
+    refs = &m_impl->referencesMembersUnsorted;
   }
-  return m_impl->referencesMembers;
+  if (refs->empty() && !m_impl->sourceRefsDict.empty())
+  {
+    *refs = refMapToVector(m_impl->sourceRefsDict, sorted);
+  }
+  return *refs;
 }
 
 const MemberVector &DefinitionImpl::getReferencedByMembers() const

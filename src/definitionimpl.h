@@ -79,7 +79,7 @@ class DefinitionImpl
     const RefItemVector &xrefListItems() const;
     const Definition *findInnerCompound(const QCString &name) const;
     Definition *getOuterScope() const;
-    const MemberVector &getReferencesMembers() const;
+    const MemberVector &getReferencesMembers(const bool sorted = true) const;
     const MemberVector &getReferencedByMembers() const;
     bool hasSections() const;
     bool hasSources() const;
@@ -203,7 +203,7 @@ class DefinitionMixin : public Base
     const RefItemVector &xrefListItems() const override { return m_impl.xrefListItems(); }
     const Definition *findInnerCompound(const QCString &name) const override { return m_impl.findInnerCompound(name); }
     Definition *getOuterScope() const override { return m_impl.getOuterScope(); }
-    const MemberVector &getReferencesMembers() const override { return m_impl.getReferencesMembers(); }
+    const MemberVector &getReferencesMembers(const bool sorted=true) const override { return m_impl.getReferencesMembers(sorted); }
     const MemberVector &getReferencedByMembers() const override { return m_impl.getReferencedByMembers(); }
     bool hasSections() const override { return m_impl.hasSections(); }
     bool hasSources() const override { return m_impl.hasSources(); }
@@ -418,7 +418,7 @@ class DefinitionAliasMixin : public Base
     { return m_alias->findInnerCompound(name); }
     Definition *getOuterScope() const override
     { return const_cast<Definition*>(m_scope); }
-    const MemberVector &getReferencesMembers() const override
+    const MemberVector &getReferencesMembers(const bool sorted) const override
     { return m_alias->getReferencesMembers(); }
     const MemberVector &getReferencedByMembers() const override
     { return m_alias->getReferencedByMembers(); }
