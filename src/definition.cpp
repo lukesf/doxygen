@@ -95,9 +95,11 @@ class DefinitionImpl::IMPL
     Definition *def = nullptr;
 
     SectionRefs sectionRefs;
-
-    std::unordered_map<std::string,MemberDef *> sourceRefByDict;
-    std::unordered_map<std::string,MemberDef *> sourceRefsDict;
+    //std::unordered_map<std::string,MemberDef *> sourceRefByDict;
+    std::unordered_map<std::string,std::tuple<MemberDef *, int>> sourceRefByDict;
+    //std::unordered_map<std::string,MemberDef *> sourceRefsDict;
+    std::unordered_map<std::string,std::tuple<MemberDef *, int>> sourceRefsDict;
+    int call_order;
     RefItemVector xrefListItems;
     GroupList partOfGroups;
 
@@ -171,6 +173,7 @@ void DefinitionImpl::IMPL::init(const QCString &df, const QCString &n)
   inbodyDocs.reset();
   sourceRefByDict.clear();
   sourceRefsDict.clear();
+  call_order = 0;
   outerScope      = Doxygen::globalScope;
   hidden          = FALSE;
   isArtificial    = FALSE;
@@ -1115,14 +1118,14 @@ void DefinitionImpl::writeInlineCode(OutputList &ol,const QCString &scopeName) c
   }
 }
 
-static inline MemberVector refMapToVector(const std::unordered_map<std::string,MemberDef *> &map, const bool sorted=true)
+static inline MemberVector refMapToVector(const std::unordered_map<std::string,std::tuple<MemberDef *, int>> &map, const bool sorted=true)
 {
   // convert map to a vector of values
   MemberVector result;
   std::transform(map.begin(),map.end(),      // iterate over map
                  std::back_inserter(result), // add results to vector
                  [](const auto &item)
-                 { return item.second; }     // extract value to add from map Key,Value pair
+                 { return std::get<0>(item.second); }     // extract value to add from map Key,Value pair
                 );
   // and sort it
   if (sorted) {
@@ -1136,7 +1139,7 @@ static inline MemberVector refMapToVector(const std::unordered_map<std::string,M
  *  definition is used.
  */
 void DefinitionImpl::_writeSourceRefList(OutputList &ol,const QCString &scopeName,
-    const QCString &text,const std::unordered_map<std::string,MemberDef *> &membersMap,
+    const QCString &text,const std::unordered_map<std::string,std::tuple<MemberDef *, int>> &membersMap,
     bool /*funcOnly*/) const
 {
   if (!membersMap.empty())
@@ -1268,7 +1271,7 @@ void DefinitionImpl::addSourceReferencedBy(MemberDef *md)
       name.append(md->argsString());
     }
 
-    m_impl->sourceRefByDict.insert({name.str(),md});
+    m_impl->sourceRefByDict.insert({name.str(),std::make_tuple(md, 0)});
   }
 }
 
@@ -1291,8 +1294,7 @@ void DefinitionImpl::addSourceReferences(MemberDef *md)
     {
       name.append(md->argsString());
     }
-
-    m_impl->sourceRefsDict.insert({name.str(),md});
+    m_impl->sourceRefsDict.insert({name.str(),std::make_tuple(md, m_impl->call_order++)});
   }
 }
 
@@ -1765,7 +1767,19 @@ const MemberVector &DefinitionImpl::getReferencesMembers(const bool sorted) cons
   }
   if (refs->empty() && !m_impl->sourceRefsDict.empty())
   {
-    *refs = refMapToVector(m_impl->sourceRefsDict, sorted);
+    if (sorted) {
+      *refs = refMapToVector(m_impl->sourceRefsDict, sorted);
+    }
+    else {
+      // convert map to a vector of values
+      for (int i=0; i<m_impl->call_order; i++) {
+        for (auto item :m_impl->sourceRefsDict) {
+          if (i==std::get<1>(item.second)) {
+            refs->push_back(std::get<0>(item.second));
+          }
+        }
+      }
+    }
   }
   return *refs;
 }

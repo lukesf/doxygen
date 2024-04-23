@@ -133,7 +133,7 @@ class DefinitionImpl
 
     int  _getXRefListId(const QCString &listName) const;
     void _writeSourceRefList(OutputList &ol,const QCString &scopeName,const QCString &text,
-                       const std::unordered_map<std::string,MemberDef *> &members,bool) const;
+                       const std::unordered_map<std::string,std::tuple<MemberDef *, int>> &members,bool) const;
     void _setBriefDescription(const QCString &b,const QCString &briefFile,int briefLine);
     void _setDocumentation(const QCString &d,const QCString &docFile,int docLine,bool stripWhiteSpace,bool atTop);
     void _setInbodyDocumentation(const QCString &d,const QCString &docFile,int docLine);

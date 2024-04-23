@@ -32,7 +32,8 @@ static QCString getUniqueId(const MemberDef *md)
 
 void DotCallGraph::buildGraph(DotNode *n,const MemberDef *md,int distance)
 {
-  auto refs = m_inverse ? md->getReferencedByMembers() : md->getReferencesMembers(false);
+  bool unsorted = true;
+  auto refs = m_inverse ? md->getReferencedByMembers() : md->getReferencesMembers(!unsorted);
   for (const auto &rmd : refs)
   {
     if (rmd->isCallable())
